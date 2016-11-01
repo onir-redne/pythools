@@ -2,8 +2,6 @@
 import curses
 import curses.panel
 import signal
-import test_status
-
 
 
 class ConsoleTools(object):
@@ -212,7 +210,7 @@ class ConsoleWindow(ConsoleControl):
                                                                                    self.get_x())
         # self._win = self.get_parent_win().subpad(self._last_h, self._last_w, self._last_y, self._last_x)
         self._win = curses.newwin(self._last_h, self._last_w, self._last_y, self._last_x)
-        self._win.bkgd(ord(' '), self._color)
+        self._win.bkgd(' ', self._color)
         self._panel = curses.panel.new_panel(self._win)
 
     def add(self, control):
@@ -228,9 +226,10 @@ class ConsoleWindow(ConsoleControl):
             self._last_w = w
             self._last_y = y
             self._last_x = x
-            self._panel.move(y, x)
+            #self._panel.move(y, x)
+
             self._win = curses.newwin(self._last_h, self._last_w, self._last_y, self._last_x)
-            self._win.bkgd(ord(' '), self._color)
+            self._win.bkgd(' ', self._color)
             self._panel = curses.panel.new_panel(self._win)
             # self._win = self.get_parent_win().subpad(h, w, y, x)
             # self._win.bkgd(ord(' '), self.get_color())
@@ -286,12 +285,12 @@ class ConsoleDisplay(object):
 
         try:
             self._cscreen = curses.initscr()
+            curses.start_color()
             curses.noecho()
             curses.cbreak()
-            curses.start_color()
             curses.use_default_colors()
             # self._cscreen.nodelay(1)
-            #signal.signal(signal.SIGWINCH, self._cb_resize)
+            # signal.signal(signal.SIGWINCH, self._cb_resize)
 
             for cname, cdef in ConsoleTools.COLORS.iteritems():
                curses.init_pair(*cdef)
@@ -315,7 +314,6 @@ class ConsoleDisplay(object):
 
     def update(self):
         #if curses.is_term_resized(self._maxy, self._maxx):
-        self._cscreen.refresh()
         for wname, win in self._subwindows.iteritems():
             win.update()
 

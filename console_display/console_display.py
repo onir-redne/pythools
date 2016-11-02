@@ -2,6 +2,7 @@
 import curses
 import curses.panel
 import signal
+import time
 
 
 class ConsoleTools(object):
@@ -191,6 +192,10 @@ class ConsoleControl(object):
     def is_visible(self):
         return self._visible
 
+    def process_input(self):
+        pass
+
+
 
 class ConsoleWindow(ConsoleControl):
     """
@@ -212,6 +217,7 @@ class ConsoleWindow(ConsoleControl):
         self._win = curses.newwin(self._last_h, self._last_w, self._last_y, self._last_x)
         self._win.bkgd(' ', self._color)
         self._panel = curses.panel.new_panel(self._win)
+        self._panel.set_userptr(self.get_name())
 
     def add(self, control):
         self._controls[control.get_name()] = control
@@ -296,7 +302,7 @@ class ConsoleDisplay(object):
                curses.init_pair(*cdef)
 
             self._maxy, self._maxx = self._cscreen.getmaxyx()
-        finally:
+        except:
             self._curses_clean()
 
     def _curses_clean(self):
@@ -327,13 +333,22 @@ class ConsoleDisplay(object):
             self._curses_clean()
 
     def _loop(self):
+        #self.update()
+        #time.sleep(5.0)
         while not self._stopping:
             self.update()
-            key = self._cscreen.getch()
-            if key == curses.KEY_RESIZE:
+            key = curses.panel.top_panel().window().getch()
+            if key == curses.KEY_RESIZE:       # terminal resized
                 self._maxy, self._maxx = self._cscreen.getmaxyx()
                 self._cscreen.clear()
                 curses.resizeterm(self._maxy, self._maxx)
+            elif key == curses.KEY_MOUSE:       # mouse event, if clicked an active panel pass to its handler otherwise
+                                                # if clicked on inactive window make it active in other case use main
+                                                # handler
+                id, x, y, z, bstate = self._cscreen.getmouse()
+
+                pass
+
 
             if key == ord('q'):
                 break

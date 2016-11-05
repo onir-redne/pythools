@@ -232,11 +232,11 @@ class ConsoleWindow(ConsoleControl):
             self._last_w = w
             self._last_y = y
             self._last_x = x
-            #self._panel.move(y, x)
-
-            self._win = curses.newwin(self._last_h, self._last_w, self._last_y, self._last_x)
-            self._win.bkgd(' ', self._color)
-            self._panel = curses.panel.new_panel(self._win)
+            self._win.mvwin(self._last_y, self._last_x)
+            self._win.resize(self._last_h, self._last_w)
+            #self._win = curses.newwin(self._last_h, self._last_w, self._last_y, self._last_x)
+            #self._win.bkgd(' ', self._color)
+            #self._panel = curses.panel.new_panel(self._win)
             # self._win = self.get_parent_win().subpad(h, w, y, x)
             # self._win.bkgd(ord(' '), self.get_color())
             # self._win.mvderwin(y, x)
@@ -333,24 +333,25 @@ class ConsoleDisplay(object):
             self._curses_clean()
 
     def _loop(self):
-        #self.update()
+        self.update()
         #time.sleep(5.0)
         while not self._stopping:
-            self.update()
             key = curses.panel.top_panel().window().getch()
             if key == curses.KEY_RESIZE:       # terminal resized
                 self._maxy, self._maxx = self._cscreen.getmaxyx()
                 self._cscreen.clear()
+                self.update()
+
                 curses.resizeterm(self._maxy, self._maxx)
-            elif key == curses.KEY_MOUSE:       # mouse event, if clicked an active panel pass to its handler otherwise
-                                                # if clicked on inactive window make it active in other case use main
-                                                # handler
+            elif key == curses.KEY_MOUSE:
+                # mouse event, if clicked an active panel pass to its handler otherwise
+                # if clicked on inactive window make it active in other case use main
+                # handler
                 id, x, y, z, bstate = self._cscreen.getmouse()
-
-                pass
-
-
-            if key == ord('q'):
-                break
+                active_y, active_x = curses.panel.top_panel().window().getbegyx()
+                #if x >= active_x and
+                #pass
+            elif key == ord('q'):
+                self._stopping = True
 
 

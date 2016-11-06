@@ -339,10 +339,9 @@ class ConsoleDisplay(object):
             key = curses.panel.top_panel().window().getch()
             if key == curses.KEY_RESIZE:       # terminal resized
                 self._maxy, self._maxx = self._cscreen.getmaxyx()
+                curses.resizeterm(self._maxy, self._maxx)
                 self._cscreen.clear()
                 self.update()
-
-                curses.resizeterm(self._maxy, self._maxx)
             elif key == curses.KEY_MOUSE:
                 # mouse event, if clicked an active panel pass to its handler otherwise
                 # if clicked on inactive window make it active in other case use main

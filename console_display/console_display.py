@@ -49,26 +49,28 @@ class ConsoleTools(object):
 
         return p
 
+#TODO - for negative float or int mesure distance from right
     @classmethod
     def size(cls, win, h, w, y, x):
         maxy, maxx = win.getmaxyx()
+        offscr = False
         if isinstance(y, float):  # treat as percentage of total dimension
             cy = int(maxy * y)
         elif isinstance(y, int):
-            if y <= maxy:
+            if y < maxy:
                 cy = y
             else:
-                cy = maxy
+                cy = maxy - 1
         else:
             raise 'invalid y dimension format'
 
         if isinstance(x, float):  # treat as percentage of total dimension
             cx = int(maxx * x)
         elif isinstance(x, int):
-            if x <= maxx:
+            if x < maxx:
                 cx = x
             else:
-                cx = maxx
+                cx = maxx - 1
         else:
             raise 'invalid x dimension format'
 
@@ -78,20 +80,20 @@ class ConsoleTools(object):
         if isinstance(h, float):  # treat as percentage of total dimension
             ch = int(maxh * h)
         elif isinstance(h, int):
-            if h <= maxh:
+            if h < maxh:
                 ch = h
             else:
-                ch = maxh
+                ch = maxh - 1
         else:
             raise 'invalid w dimension format'
 
         if isinstance(w, float):  # treat as percentage of total dimension
             cw = int(maxw * w)
         elif isinstance(w, int):
-            if x <= maxw:
+            if w < maxw:
                 cw = w
             else:
-                cw = maxw
+                cw = maxw - 1
         else:
             raise 'invalid h dimension format'
 
@@ -112,6 +114,7 @@ class ConsoleControl(object):
         self._color = color
         self._w = 0
         self._h = 0
+        self._offscreen = False
 
         self._cb_invalidate_handler = None  # invalidate function forces redraw
 
@@ -195,6 +198,12 @@ class ConsoleControl(object):
     def process_input(self):
         pass
 
+    def is_offscreen(self):
+        return self._offscreen
+
+    def set_offsecreen(self, offscreen):
+        self._offscreen = offscreen
+
 
 
 class ConsoleWindow(ConsoleControl):
@@ -232,14 +241,15 @@ class ConsoleWindow(ConsoleControl):
             self._last_w = w
             self._last_y = y
             self._last_x = x
-            self._win.mvwin(self._last_y, self._last_x)
             self._win.resize(self._last_h, self._last_w)
+            self._win.mvwin(self._last_y, self._last_x)
             #self._win = curses.newwin(self._last_h, self._last_w, self._last_y, self._last_x)
             #self._win.bkgd(' ', self._color)
             #self._panel = curses.panel.new_panel(self._win)
             # self._win = self.get_parent_win().subpad(h, w, y, x)
             # self._win.bkgd(ord(' '), self.get_color())
             # self._win.mvderwin(y, x)
+
 
         window_title_str = self.get_value() + ' (' + self.get_name() + ')'
         self._win.addstr(0, 1, window_title_str[:w - 2], self.get_color() | curses.A_REVERSE)
@@ -282,12 +292,15 @@ class ConsoleDisplay(object):
     present test results on text console with curses
     """
 
-    def __init__(self):
+    def __init__(self, debug=False):
+        self._debug = debug
         self._cscreen = None
         self._maxy = 0
         self._maxx = 0
         self._subwindows = {}
+        self._internal_windows = {}
         self._stopping = False
+        self._mouse_nfo = {'x' : 0, 'y': 0, 'btn': 'L'}
 
         try:
             self._cscreen = curses.initscr()
@@ -302,6 +315,12 @@ class ConsoleDisplay(object):
                curses.init_pair(*cdef)
 
             self._maxy, self._maxx = self._cscreen.getmaxyx()
+            if self._debug: # create internal debug windows... they can be managed in different manner than user windows
+                self._internal_windows['mouse_debug'] = ConsoleWindow(self._cscreen, 1, 9, 0, self._maxx - 10,
+                                                                      'mouse_debug', '',
+                                                                      ConsoleTools.color('CP_WHITE_MAGENTA'))
+
+
         except:
             self._curses_clean()
 
@@ -321,6 +340,9 @@ class ConsoleDisplay(object):
     def update(self):
         #if curses.is_term_resized(self._maxy, self._maxx):
         for wname, win in self._subwindows.iteritems():
+            win.update()
+
+        for wname, win in self._internal_windows.iteritems():
             win.update()
 
         curses.panel.update_panels()

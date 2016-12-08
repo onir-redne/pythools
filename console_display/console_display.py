@@ -49,28 +49,41 @@ class ConsoleTools(object):
 
         return p
 
-#TODO - for negative float or int mesure distance from right
     @classmethod
     def size(cls, win, h, w, y, x):
         maxy, maxx = win.getmaxyx()
-        offscr = False
+        #offscr = False
         if isinstance(y, float):  # treat as percentage of total dimension
-            cy = int(maxy * y)
+                cy = int(maxy * abs(y))
+                if y < 0.0:
+                    cy = maxy - cy
         elif isinstance(y, int):
-            if y < maxy:
+            if abs(y) < maxy:
                 cy = y
+                if y < 0:
+                    cy = maxy + y
             else:
-                cy = maxy - 1
+                if y < 0:
+                    cy = 0
+                else:
+                    cy = maxy - 1
         else:
             raise 'invalid y dimension format'
 
         if isinstance(x, float):  # treat as percentage of total dimension
-            cx = int(maxx * x)
+            cx = int(maxx * abs(x))
+            if x < 0.0:
+                cx = maxx - cx
         elif isinstance(x, int):
-            if x < maxx:
+            if abs(x) < maxx:
                 cx = x
+                if x < 0:
+                    cx = maxx + x
             else:
-                cx = maxx - 1
+                if x < 0:
+                    cx = 0
+                else:
+                    cx = maxx - 1
         else:
             raise 'invalid x dimension format'
 
@@ -155,9 +168,13 @@ class ConsoleControl(object):
 
     def set_h(self, h):
         self._h = h
+        if self._h == 0:
+            self._h = 1
 
     def set_w(self, w):
         self._w = w
+        if self._w == 0:
+            self._w = 1
 
     def get_h(self,):
         return self._h
@@ -250,9 +267,9 @@ class ConsoleWindow(ConsoleControl):
             # self._win.bkgd(ord(' '), self.get_color())
             # self._win.mvderwin(y, x)
 
-
-        window_title_str = self.get_value() + ' (' + self.get_name() + ')'
-        self._win.addstr(0, 1, window_title_str[:w - 2], self.get_color() | curses.A_REVERSE)
+        if self.get_value():
+            window_title_str = self.get_value() + ' (' + self.get_name() + ')'
+            self._win.addstr(0, 1, window_title_str[:w - 2], self.get_color() | curses.A_REVERSE)
 
         for name, control in self._controls.iteritems():
             if control.is_visible():
@@ -267,12 +284,11 @@ class ConsoleLabel(ConsoleControl):
             raise 'invalid value type'
 
         super(ConsoleLabel, self).__init__(parent_win, y, x, name, value, color)
-        super(ConsoleLabel, self)._w = len(self._value)
-        super(ConsoleLabel, self)._h = 1
+        self.set_w(len(value))
+        self.set_h(1)
 
     def update(self):
-        self._parent_win.addstr(super(ConsoleLabel, self)._y, super(ConsoleLabel, self)._x,
-                                super(ConsoleLabel, self)._value, super(ConsoleLabel, self)._color)
+        self.get.addstr(self.get_y(), self.get_x(), self.get_value(), self.get_color())
 
 
 class ConsoleProgressBar(ConsoleControl):
@@ -316,11 +332,12 @@ class ConsoleDisplay(object):
 
             self._maxy, self._maxx = self._cscreen.getmaxyx()
             if self._debug: # create internal debug windows... they can be managed in different manner than user windows
-                self._internal_windows['mouse_debug'] = ConsoleWindow(self._cscreen, 1, 9, 0, self._maxx - 10,
-                                                                      'mouse_debug', '',
+                self._internal_windows['mouse_debug'] = ConsoleWindow(self._cscreen, 1, 10, 0, -0.2,
+                                                                      'mouse_debug', None,
                                                                       ConsoleTools.color('CP_WHITE_MAGENTA'))
-
-
+                self._internal_windows['mouse_debug'].add(ConsoleLabel(self._internal_windows['mouse_debug'], 0, 0,
+                                                                       'test', 'test',
+                                                                       ConsoleTools.color('CP_BLUE_WHITE')))
         except:
             self._curses_clean()
 
@@ -374,5 +391,3 @@ class ConsoleDisplay(object):
                 #pass
             elif key == ord('q'):
                 self._stopping = True
-
-
